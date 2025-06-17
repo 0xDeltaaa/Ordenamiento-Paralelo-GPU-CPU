@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Comparador de Algoritmos de Ordenamiento</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background: #181a20;
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+        .container {
+            background: #23272f;
+            border-radius: 18px;
+            box-shadow: 0 4px 32px #000a;
+            padding: 2.5rem 2rem 2rem 2rem;
+            margin-top: 2rem;
+        }
+        h1, h3, h5, label, th {
+            color: #f8fafc;
+        }
+        .form-label, .form-select, .btn, .alert, .list-group-item {
+            color: #e0e0e0;
+        }
+        .form-select, .btn, .table, .alert, .list-group-item {
+            background: #23272f;
+            border: 1px solid #343a40;
+        }
+        .form-select:focus, .btn:focus {
+            box-shadow: 0 0 0 2px #00bcd4;
+        }
+        .btn-primary {
+            background: linear-gradient(90deg, #00bcd4 0%, #1976d2 100%);
+            border: none;
+            color: #fff;
+            font-weight: bold;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(90deg, #1976d2 0%, #00bcd4 100%);
+        }
+        .spinner-border {
+            color: #00bcd4;
+        }
+        .table-striped>tbody>tr:nth-of-type(odd) {
+            background-color: #23272f;
+        }
+        .table-striped>tbody>tr:nth-of-type(even) {
+            background-color: #1a1d23;
+        }
+        .table th, .table td {
+            border-color: #343a40;
+        }
+        .alert-info {
+            background: #1e293b;
+            border-color: #00bcd4;
+            color: #00bcd4;
+        }
+        .alert-success {
+            background: #1e293b;
+            border-color: #43e97b;
+            color: #43e97b;
+        }
+        .list-group-item {
+            background: #181a20;
+            border: 1px solid #23272f;
+        }
+        .list-group-item b {
+            color: #00bcd4;
+        }
+        .chartjs-render-monitor {
+            background: #23272f;
+            border-radius: 10px;
+        }
+        .section-title {
+            border-left: 5px solid #00bcd4;
+            padding-left: 0.7em;
+            margin-bottom: 1em;
+        }
+        .table-responsive {
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        @media (max-width: 768px) {
+            .container { padding: 1rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1 class="mb-4 section-title">Comparador de Algoritmos de Ordenamiento</h1>
+    <form id="sortForm" class="row g-3 mb-4">
+        <div class="col-md-6">
+            <label for="alg" class="form-label">Algoritmo</label>
+            <select class="form-select" id="alg" name="alg">
+                <option value="ms">MergeSort</option>
+                <option value="qs">QuickSort</option>
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Dataset</label>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-outline-info dataset-btn flex-fill" data-dataset="5000" id="btn-5000">5 mil</button>
+                <button type="button" class="btn btn-outline-info dataset-btn flex-fill" data-dataset="5M" id="btn-5M">5 millones</button>
+                <button type="button" class="btn btn-outline-info dataset-btn flex-fill" data-dataset="10M" id="btn-10M">10 millones</button>
+            </div>
+            <input type="hidden" id="dataset" name="dataset" value="5000">
+        </div>
+        <div class="col-md-12 d-flex align-items-end mt-3">
+            <button type="submit" class="btn btn-primary w-100">Ejecutar</button>
+            <div class="spinner-border ms-3" id="spinner" role="status">
+                <span class="visually-hidden">Procesando...</span>
+            </div>
+        </div>
+    </form>
+
+
+    <h3 class="mt-5 section-title">Comparativa de Tiempos y Speedup</h3>
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <canvas id="chart" height="100"></canvas>
+        </div>
+        <div class="col-md-4">
+            <table class="table table-dark table-striped" id="speedupTable">
+                <thead>
+                    <tr><th>Modo</th><th>Tiempo (ms)</th><th>Speedup</th></tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <h3 class="mt-5 section-title">Muestra de Datos (primeros 10 estudiantes)</h3>
+    <div class="row">
+        <div class="col-md-6">
+            <h5>Antes de ordenar</h5>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                    <tr>
+                        {% for h in headers %}
+                        <th>{{ h }}</th>
+                        {% endfor %}
+                    </tr>
+                    </thead>
+                    <tbody id="sampleBody">
+                    {% for row in students %}
+                    <tr>
+                        {% for v in row %}
+                        <td>{{ v }}</td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <h5>Después de ordenar</h5>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                    <tr id="sortedHeaders">
+                    </tr>
+                    </thead>
+                    <tbody id="sortedBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <h3 class="mt-5 section-title">Historial de Ejecuciones</h3>
+    <ul class="list-group mb-4" id="history">
+        {% for h in history %}
+        <li class="list-group-item">
+            <b>{{ h.alg }} - {{ h.mode }}</b><br>
+            <pre>{{ h.result }}</pre>
+        </li>
+        {% endfor %}
+    </ul>
+
+    <div id="resultados" class="mb-4">
+        <!-- Aquí se mostrará el resultado textual del binario -->
+    </div>
+</div>
+<script>
+const tiempos = [];
+const labels = [];
+// Dataset button logic
+const datasetBtns = document.querySelectorAll('.dataset-btn');
+const datasetInput = document.getElementById('dataset');
+datasetBtns.forEach(btn => {
+    btn.addEventListener('click', function() {
+        datasetBtns.forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        datasetInput.value = this.getAttribute('data-dataset');
+        // Recargar muestra de datos
+        fetch(`/sample?dataset=${datasetInput.value}`)
+            .then(res => res.json())
+            .then(data => {
+                const tbody = document.getElementById('sampleBody');
+                tbody.innerHTML = '';
+                data.students.forEach(row => {
+                    const tr = document.createElement('tr');
+                    row.forEach(v => {
+                        const td = document.createElement('td');
+                        td.textContent = v;
+                        tr.appendChild(td);
+                    });
+                    tbody.appendChild(tr);
+                });
+            });
+    });
+});
+const defaultBtn = document.getElementById('btn-5000');
+defaultBtn.classList.add('active');
+
+// Chart.js global variable
+let myChart = null;
+
+// Envío del formulario y actualización de la UI
+const sortForm = document.getElementById('sortForm');
+sortForm.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    document.getElementById('spinner').style.display = 'inline-block';
+    const alg = document.getElementById('alg').value;
+    const dataset = document.getElementById('dataset').value;
+    const res = await fetch('/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ alg, dataset })
+    });
+    const data = await res.json();
+    document.getElementById('spinner').style.display = 'none';
+    // Mostrar resultado verificado y tiempo bonito
+    let html = '';
+    // Ya no mostrar el tiempo ni el resultado verificado
+    // Solo mostrar el resto del output si existe
+    if(data.resultados && data.resultados.seq && data.resultados.seq.output) {
+        const output = data.resultados.seq.output;
+        const lines = output.split('\n');
+        let tiempo = lines.find(l => l.startsWith('Tiempo'));
+        let verificado = lines.find(l => l.includes('verificado') || l.includes('✔️'));
+        // Eliminar líneas de tiempo y verificado del output para no duplicar
+        const filtered = lines.filter(l => l !== tiempo && l !== verificado).join('\n');
+        if(filtered.trim().length > 0) {
+            html += `<pre style=\"background:#23272f;color:#00bcd4;padding:1em;border-radius:8px;\">${filtered}</pre>`;
+        }
+    }
+    document.getElementById('resultados').innerHTML = html;
+    // Graficar y mostrar tabla de speedup
+    if(myChart) myChart.destroy();
+    myChart = new Chart(document.getElementById('chart').getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: ['Secuencial', 'OpenMP', 'CUDA'],
+            datasets: [{
+                label: 'Tiempo (ms)',
+                data: [data.tiempos.seq || null, data.tiempos.omp || null, data.tiempos.cuda || null],
+                backgroundColor: ['#1976d2', '#00bcd4', '#43e97b']
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+    // Tabla de speedup
+    const tbody = document.querySelector('#speedupTable tbody');
+    tbody.innerHTML = '';
+    ['seq','omp','cuda'].forEach(mode => {
+        const tr = document.createElement('tr');
+        let label = mode==='seq' ? 'Secuencial' : (mode==='omp' ? 'OpenMP' : 'CUDA');
+        let t = data.tiempos[mode] !== undefined && data.tiempos[mode] !== null ? data.tiempos[mode].toFixed(2) : '-';
+        let s = mode==='seq' ? '1.00' : (data.speedups[mode]!==undefined ? data.speedups[mode].toFixed(2) : '-');
+        tr.innerHTML = `<td>${label}</td><td>${t}</td><td>${s}</td>`;
+        tbody.appendChild(tr);
+    });
+    // Actualizar tabla ordenada si hay datos
+    const sortedHeaders = data.sorted_headers || [];
+    const sortedStudents = data.sorted_students || [];
+    let th = '';
+    for(const h of sortedHeaders) th += `<th>${h}</th>`;
+    document.getElementById('sortedHeaders').innerHTML = th;
+    let tb = '';
+    for(const row of sortedStudents) {
+        tb += '<tr>' + row.map(v => `<td>${v}</td>`).join('') + '</tr>';
+    }
+    document.getElementById('sortedBody').innerHTML = tb;
+    // Actualizar historial (mostrar todos los resultados pasados)
+    if(data.resultados) {
+        let histHtml = '';
+        Object.entries(data.resultados).forEach(([mode, result]) => {
+            histHtml += `<li class='list-group-item'><b>${alg} - ${mode}</b><br><pre>${result.output || ''}</pre></li>`;
+        });
+        document.getElementById('history').innerHTML = histHtml;
+    }
+});
+</script>
+</body>
+</html>
