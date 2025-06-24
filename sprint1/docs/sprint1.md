@@ -8,7 +8,7 @@
 
 3. **Verificación exhaustiva** de exactitud frente a la versión secuencial.
 
-4. **Medición reproducible** de rendimiento ↔ _speed-up_ anticipado por la rúbrica (> 4× en datasets ≥ 10^5).
+4. **Medición reproducible** de rendimiento ↔ _speed-up_ (> 4× en datasets ≥ 10^5).
 
 
 
