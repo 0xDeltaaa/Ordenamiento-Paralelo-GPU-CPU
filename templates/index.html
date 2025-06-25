@@ -116,6 +116,44 @@
     </form>
 
 
+    <!-- Detalle de Algoritmos -->
+    <h3 class="mt-5 section-title">Detalle de Algoritmos</h3>
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <label for="algVis" class="form-label">Selecciona un algoritmo</label>
+            <select class="form-select" id="algVis">
+                <option value="ms">MergeSort</option>
+                <option value="qs">QuickSort</option>
+            </select>
+        </div>
+        <div class="col-md-8" id="algVisual">
+            <!-- Aquí irá el diagrama/explicación -->
+        </div>
+    </div>
+    <script>
+    // Explicaciones y diagramas SVG simples para cada algoritmo
+    const algExplicaciones = {
+        ms: {
+            titulo: 'MergeSort Paralelo',
+            svg: `<svg width='100%' height='120' viewBox='0 0 400 120'><rect x='10' y='20' width='380' height='20' fill='#1976d2'/><rect x='10' y='60' width='180' height='20' fill='#00bcd4'/><rect x='210' y='60' width='180' height='20' fill='#00bcd4'/><rect x='10' y='100' width='80' height='15' fill='#43e97b'/><rect x='110' y='100' width='80' height='15' fill='#43e97b'/><rect x='210' y='100' width='80' height='15' fill='#43e97b'/><rect x='310' y='100' width='80' height='15' fill='#43e97b'/></svg>`,
+            texto: 'MergeSort divide el arreglo en mitades recursivamente y luego las fusiona ordenadas. En paralelo, cada mitad puede ordenarse en un hilo/proceso diferente, acelerando la operación.'
+        },
+        qs: {
+            titulo: 'QuickSort Paralelo',
+            svg: `<svg width='100%' height='120' viewBox='0 0 400 120'><rect x='10' y='20' width='380' height='20' fill='#1976d2'/><rect x='10' y='60' width='120' height='20' fill='#00bcd4'/><rect x='150' y='60' width='100' height='20' fill='#00bcd4'/><rect x='270' y='60' width='120' height='20' fill='#00bcd4'/><rect x='10' y='100' width='50' height='15' fill='#43e97b'/><rect x='70' y='100' width='50' height='15' fill='#43e97b'/><rect x='150' y='100' width='50' height='15' fill='#43e97b'/><rect x='210' y='100' width='40' height='15' fill='#43e97b'/><rect x='270' y='100' width='50' height='15' fill='#43e97b'/><rect x='330' y='100' width='50' height='15' fill='#43e97b'/></svg>`,
+            texto: 'QuickSort selecciona un pivote y divide el arreglo en menores y mayores. En paralelo, cada partición puede ordenarse en un hilo/proceso diferente, permitiendo mayor velocidad.'
+        }
+    };
+    function mostrarAlgoritmoDetalle(tipo) {
+        const alg = algExplicaciones[tipo];
+        document.getElementById('algVisual').innerHTML = `<h5>${alg.titulo}</h5>${alg.svg}<p class='mt-2'>${alg.texto}</p>`;
+    }
+    document.getElementById('algVis').addEventListener('change', function() {
+        mostrarAlgoritmoDetalle(this.value);
+    });
+    mostrarAlgoritmoDetalle('ms'); // Mostrar por defecto
+    </script>
+
     <h3 class="mt-5 section-title">Comparativa de Tiempos y Speedup</h3>
     <div class="row mb-4">
         <div class="col-md-8">
@@ -184,6 +222,129 @@
     <div id="resultados" class="mb-4">
         <!-- Aquí se mostrará el resultado textual del binario -->
     </div>
+
+    <!-- Estadísticas avanzadas -->
+    <h5 class="mt-4">Estadísticas de Tiempos</h5>
+    <div class="row mb-3">
+        <div class="col-md-8">
+            <table class="table table-dark table-striped" id="statsTable">
+                <thead>
+                    <tr><th>Estadística</th><th>Valor (ms)</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Promedio</td><td id="avgTime">-</td></tr>
+                    <tr><td>Desviación estándar</td><td id="stdTime">-</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="col-md-4 d-flex align-items-center">
+            <button class="btn btn-outline-info w-100" id="downloadCSV">Descargar resultados CSV</button>
+        </div>
+    </div>
+    <script>
+    // Función para calcular promedio y desviación estándar
+    function calcularStats(valores) {
+        const valid = valores.filter(v => typeof v === 'number' && !isNaN(v));
+        if(valid.length === 0) return {avg: '-', std: '-'};
+        const avg = valid.reduce((a,b) => a+b, 0) / valid.length;
+        const std = Math.sqrt(valid.reduce((a,b) => a + Math.pow(b-avg,2), 0) / valid.length);
+        return {avg, std};
+    }
+    // Función para descargar CSV
+    function descargarCSV(resultados, tiempos, speedups) {
+        let csv = 'Modo,Tiempo (ms),Speedup\n';
+        ['seq','omp','cuda'].forEach(mode => {
+            let label = mode==='seq' ? 'Secuencial' : (mode==='omp' ? 'OpenMP' : 'CUDA');
+            let t = tiempos[mode] !== undefined && tiempos[mode] !== null ? tiempos[mode].toFixed(4) : '-';
+            let s = mode==='seq' ? '1.00' : (speedups[mode]!==undefined ? speedups[mode].toFixed(4) : '-');
+            csv += `${label},${t},${s}\n`;
+        });
+        // Estadísticas
+        const vals = ['seq','omp','cuda'].map(m => tiempos[m]).filter(v => typeof v === 'number' && !isNaN(v));
+        const stats = calcularStats(vals);
+        csv += `Promedio,${stats.avg.toFixed(4)},\n`;
+        csv += `Desviación estándar,${stats.std.toFixed(4)},\n`;
+        // Descargar
+        const blob = new Blob([csv], {type: 'text/csv'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'resultados_ordenamiento.csv';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+    // Actualizar estadísticas y botón CSV después de cada ejecución
+    let ultimosResultados = null;
+    let ultimosTiempos = null;
+    let ultimosSpeedups = null;
+    function actualizarStats(tiempos, resultados, speedups) {
+        ultimosResultados = resultados;
+        ultimosTiempos = tiempos;
+        ultimosSpeedups = speedups;
+        const vals = ['seq','omp','cuda'].map(m => tiempos[m]).filter(v => typeof v === 'number' && !isNaN(v));
+        const stats = calcularStats(vals);
+        document.getElementById('avgTime').textContent = stats.avg !== '-' ? stats.avg.toFixed(4) : '-';
+        document.getElementById('stdTime').textContent = stats.std !== '-' ? stats.std.toFixed(4) : '-';
+    }
+    document.getElementById('downloadCSV').addEventListener('click', function() {
+        if(ultimosResultados && ultimosTiempos && ultimosSpeedups) {
+            descargarCSV(ultimosResultados, ultimosTiempos, ultimosSpeedups);
+        }
+    });
+    </script>
+
+    <!-- Comparación de múltiples ejecuciones -->
+    <h5 class="mt-4">Comparar Ejecuciones</h5>
+    <div class="mb-3" id="multiRunPanel">
+        <div id="multiRunList" class="mb-2"></div>
+        <button class="btn btn-outline-info btn-sm" id="clearRuns">Limpiar historial de comparaciones</button>
+    </div>
+    <script>
+    // Historial de ejecuciones para comparación
+    let ejecucionesGuardadas = [];
+    function guardarEjecucion(config, tiempos, speedups) {
+        ejecucionesGuardadas.push({ config, tiempos, speedups, fecha: new Date() });
+        renderizarListaEjecuciones();
+    }
+    function renderizarListaEjecuciones() {
+        const cont = document.getElementById('multiRunList');
+        cont.innerHTML = '';
+        ejecucionesGuardadas.forEach((ej, idx) => {
+            const id = 'ejec_' + idx;
+            cont.innerHTML += `<div class='form-check form-check-inline'>
+                <input class='form-check-input' type='checkbox' value='${idx}' id='${id}' checked>
+                <label class='form-check-label' for='${id}'>${ej.config.alg.toUpperCase()} - ${ej.config.dataset} (${ej.fecha.toLocaleTimeString()})</label>
+            </div>`;
+        });
+    }
+    document.getElementById('clearRuns').onclick = function() {
+        ejecucionesGuardadas = [];
+        renderizarListaEjecuciones();
+        actualizarGraficoComparativo();
+    };
+    function obtenerEjecucionesSeleccionadas() {
+        const checks = document.querySelectorAll('#multiRunList input[type=checkbox]');
+        return Array.from(checks).filter(c => c.checked).map(c => ejecucionesGuardadas[parseInt(c.value)]);
+    }
+    function actualizarGraficoComparativo() {
+        const seleccionadas = obtenerEjecucionesSeleccionadas();
+        if(myChart) myChart.destroy();
+        const labels = ['Secuencial', 'OpenMP', 'CUDA'];
+        const datasets = seleccionadas.map((ej, i) => ({
+            label: `${ej.config.alg.toUpperCase()} - ${ej.config.dataset} (${ej.fecha.toLocaleTimeString()})`,
+            data: [ej.tiempos.seq || null, ej.tiempos.omp || null, ej.tiempos.cuda || null],
+            backgroundColor: ['#1976d2', '#00bcd4', '#43e97b'].map(c => c + (i > 0 ? Math.floor(100 + Math.random()*100).toString(16) : ''))
+        }));
+        myChart = new Chart(document.getElementById('chart').getContext('2d'), {
+            type: 'bar',
+            data: { labels, datasets },
+            options: { responsive: true, plugins: { legend: { display: true } }, scales: { y: { beginAtZero: true } } }
+        });
+    }
+    document.getElementById('multiRunList').addEventListener('change', actualizarGraficoComparativo);
+    </script>
 </div>
 <script>
 const tiempos = [];
@@ -251,23 +412,8 @@ sortForm.addEventListener('submit', async function(e) {
     }
     document.getElementById('resultados').innerHTML = html;
     // Graficar y mostrar tabla de speedup
-    if(myChart) myChart.destroy();
-    myChart = new Chart(document.getElementById('chart').getContext('2d'), {
-        type: 'bar',
-        data: {
-            labels: ['Secuencial', 'OpenMP', 'CUDA'],
-            datasets: [{
-                label: 'Tiempo (ms)',
-                data: [data.tiempos.seq || null, data.tiempos.omp || null, data.tiempos.cuda || null],
-                backgroundColor: ['#1976d2', '#00bcd4', '#43e97b']
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: { legend: { display: false } },
-            scales: { y: { beginAtZero: true } }
-        }
-    });
+    guardarEjecucion({alg, dataset}, data.tiempos, data.speedups);
+    actualizarGraficoComparativo();
     // Tabla de speedup
     const tbody = document.querySelector('#speedupTable tbody');
     tbody.innerHTML = '';
@@ -279,6 +425,8 @@ sortForm.addEventListener('submit', async function(e) {
         tr.innerHTML = `<td>${label}</td><td>${t}</td><td>${s}</td>`;
         tbody.appendChild(tr);
     });
+    // Actualizar estadísticas avanzadas
+    actualizarStats(data.tiempos, data.resultados, data.speedups);
     // Actualizar tabla ordenada si hay datos
     const sortedHeaders = data.sorted_headers || [];
     const sortedStudents = data.sorted_students || [];
@@ -298,6 +446,8 @@ sortForm.addEventListener('submit', async function(e) {
         });
         document.getElementById('history').innerHTML = histHtml;
     }
+    // Actualizar estadísticas y botón CSV
+    actualizarStats(data.tiempos, data.resultados, data.speedups);
 });
 </script>
 </body>
